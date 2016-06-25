@@ -22,6 +22,10 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+
+// code from: https://developer.android.com/training/camera/photobasics.html
+
+
 public class MainActivity extends AppCompatActivity
 {
 
@@ -84,6 +88,7 @@ public class MainActivity extends AppCompatActivity
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
         if (!storageDir.exists())
         {
             storageDir.mkdir();
@@ -121,7 +126,7 @@ public class MainActivity extends AppCompatActivity
             if (photoFile != null)
             {
                 Uri photoURI = FileProvider.getUriForFile(this,
-                        "com.example.android.fileprovider",
+                        "thackbarth.com.securecameraintent.fileprovider",
                         photoFile);
                 takePictureIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
                 startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
