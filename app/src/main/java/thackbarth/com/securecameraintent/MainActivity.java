@@ -1,5 +1,7 @@
 package thackbarth.com.securecameraintent;
 
+import android.app.Activity;
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -12,12 +14,14 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.content.FileProvider;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -30,6 +34,7 @@ public class MainActivity extends AppCompatActivity
 {
 
     ImageView mImageView;
+    File destination;
 
     @Override
     protected void onCreate(Bundle savedInstanceState)
@@ -41,6 +46,10 @@ public class MainActivity extends AppCompatActivity
 
         mImageView = (ImageView) findViewById(R.id.imageview);
 
+        destination = new File(Environment
+                .getExternalStorageDirectory(), "image.jpg");
+
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener()
         {
@@ -50,6 +59,7 @@ public class MainActivity extends AppCompatActivity
 //                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
 //                        .setAction("Action", null).show();
                 dispatchTakePictureIntent();
+//                takeNonPrivateImage();
             }
         });
     }
@@ -81,17 +91,24 @@ public class MainActivity extends AppCompatActivity
 
 
     String mCurrentPhotoPath;
-
+    private static final String TAG = "MainActivity";
     private File createImageFile() throws IOException
     {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
 
-        if (!storageDir.exists())
+        //  /storage/emulated/0/Android/data/thackbarth.com.securecameraintent/files/Pictures/
+
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        if ( !storageDir.exists() )
         {
-            storageDir.mkdir();
+            if (!storageDir.mkdir())
+                Log.e(TAG, "createImageFile: direct create failed" );
+        }
+        else
+        {
+            Log.i(TAG, "createImageFile: directory exists");
         }
         File image = File.createTempFile(
                 imageFileName,  /* prefix */
@@ -99,11 +116,15 @@ public class MainActivity extends AppCompatActivity
                 storageDir      /* directory */
         );
 
+
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = "file:" + image.getAbsolutePath();
         return image;
+
+
     }
 
+    private static final int REQUEST_IMAGE = 439;
     static final int REQUEST_TAKE_PHOTO = 1;
 
     private void dispatchTakePictureIntent()
@@ -143,6 +164,25 @@ public class MainActivity extends AppCompatActivity
         {
             setPic();
         }
+
+        if (requestCode == REQUEST_IMAGE
+                && resultCode == Activity.RESULT_OK)
+        {
+            try
+            {
+                FileInputStream in =
+                        new FileInputStream(destination);
+                BitmapFactory.Options options =
+                        new BitmapFactory.Options();
+                options.inSampleSize = 10; //Downsample by 10x
+                Bitmap userImage = BitmapFactory
+                        .decodeStream(in, null, options);
+                mImageView.setImageBitmap(userImage);
+            } catch (Exception e)
+            {
+                e.printStackTrace();
+            }
+        }
     }
 
     private void setPic()
@@ -168,5 +208,21 @@ public class MainActivity extends AppCompatActivity
 
         Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
         mImageView.setImageBitmap(bitmap);
+    }
+
+    public void takeNonPrivateImage()
+    {
+        try
+        {
+            Intent intent =
+                    new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+            //Add extra to save full-image somewhere
+            intent.putExtra(MediaStore.EXTRA_OUTPUT,
+                    Uri.fromFile(destination));
+            startActivityForResult(intent, REQUEST_IMAGE);
+        } catch (ActivityNotFoundException e)
+        {
+            //Handle if no application exists
+        }
     }
 }
