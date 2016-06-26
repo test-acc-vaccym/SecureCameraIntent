@@ -44,6 +44,7 @@ public class MainActivity extends AppCompatActivity
     ImageView mImageView;
     File destination;
     String mCurrentPhotoPath;
+    String mCurrentPhotoPath1;
 
     // Storage Permissions
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
@@ -189,7 +190,8 @@ public class MainActivity extends AppCompatActivity
                 storageDir      /* directory */
         );
         // Save a file: path for use with ACTION_VIEW intents
-        mCurrentPhotoPath = "file:" + image.getAbsolutePath();
+        mCurrentPhotoPath = "file:/" + image.getAbsolutePath();
+        mCurrentPhotoPath1 =  image.getAbsolutePath();
         return image;
     }
 
@@ -261,7 +263,7 @@ public class MainActivity extends AppCompatActivity
         // Get the dimensions of the bitmap
         BitmapFactory.Options bmOptions = new BitmapFactory.Options();
         bmOptions.inJustDecodeBounds = true;
-        BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
+        BitmapFactory.decodeFile(mCurrentPhotoPath1, bmOptions);
         int photoW = bmOptions.outWidth;
         int photoH = bmOptions.outHeight;
 
@@ -273,7 +275,7 @@ public class MainActivity extends AppCompatActivity
         bmOptions.inSampleSize = scaleFactor;
         bmOptions.inPurgeable = true;
 
-        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath, bmOptions);
+        Bitmap bitmap = BitmapFactory.decodeFile(mCurrentPhotoPath1, bmOptions);
         mImageView.setImageBitmap(bitmap);
     }
 
