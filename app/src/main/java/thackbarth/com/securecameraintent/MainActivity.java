@@ -3,6 +3,7 @@ package thackbarth.com.securecameraintent;
 import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -36,13 +37,18 @@ import java.util.Date;
 
 public class MainActivity extends AppCompatActivity
 {
+    private static final String TAG = "MainActivity";
+    private static final int REQUEST_IMAGE = 439;
+    static final int REQUEST_TAKE_PHOTO = 1;
 
     ImageView mImageView;
     File destination;
+    String mCurrentPhotoPath;
 
     // Storage Permissions
     private static final int REQUEST_EXTERNAL_STORAGE = 1;
     private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.CAMERA,
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE
     };
@@ -66,6 +72,24 @@ public class MainActivity extends AppCompatActivity
                     REQUEST_EXTERNAL_STORAGE
             );
         }
+    }
+
+    public File getAlbumStorageDir(Context context, String albumName) {
+        // Get the directory for the app's private pictures directory.
+        File file = new File(context.getExternalFilesDir(
+                Environment.DIRECTORY_DCIM), albumName);
+        if (!file.mkdirs()) {
+            Log.e(TAG, "Directory not created");
+        }
+        return file;
+    }
+
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
     }
 
     @Override
@@ -108,9 +132,15 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-
         verifyStoragePermissions(this);
-
+        if (isExternalStorageWritable())
+        {
+            Log.i(TAG, "onCreate: OK to save files");
+        }
+        else
+        {
+            Log.i(TAG, "onCreate: CAN NOT  save files");
+        }
     }
 
     @Override
@@ -134,21 +164,15 @@ public class MainActivity extends AppCompatActivity
         {
             return true;
         }
-
         return super.onOptionsItemSelected(item);
     }
 
-
-    String mCurrentPhotoPath;
-    private static final String TAG = "MainActivity";
     private File createImageFile() throws IOException
     {
         // Create an image file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
-
         //  /storage/emulated/0/Android/data/thackbarth.com.securecameraintent/files/Pictures/
-
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
         if ( !storageDir.exists() )
         {
@@ -164,17 +188,12 @@ public class MainActivity extends AppCompatActivity
                 ".jpg",         /* suffix */
                 storageDir      /* directory */
         );
-
-
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoPath = "file:" + image.getAbsolutePath();
         return image;
-
-
     }
 
-    private static final int REQUEST_IMAGE = 439;
-    static final int REQUEST_TAKE_PHOTO = 1;
+
 
     private void dispatchTakePictureIntent()
     {
@@ -221,11 +240,10 @@ public class MainActivity extends AppCompatActivity
             {
                 FileInputStream in =
                         new FileInputStream(destination);
-                BitmapFactory.Options options =
-                        new BitmapFactory.Options();
-                options.inSampleSize = 10; //Downsample by 10x
-                Bitmap userImage = BitmapFactory
-                        .decodeStream(in, null, options);
+
+                BitmapFactory.Options options =   new BitmapFactory.Options();
+//                options.inSampleSize = 10; //Downsample by 10x
+                Bitmap userImage = BitmapFactory.decodeStream(in, null, options);
                 mImageView.setImageBitmap(userImage);
             } catch (Exception e)
             {
